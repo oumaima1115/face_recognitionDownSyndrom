@@ -1,13 +1,23 @@
 import numpy as np
 import cv2
+# from cv2 import face
 import pickle
+import requests
+import traceback
+
 
 face_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_frontalface_alt2.xml')
 eye_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_eye.xml')
 smile_cascade = cv2.CascadeClassifier('cascades/data/haarcascade_smile.xml')
 
+print(print(cv2.__file__))
 
 recognizer = cv2.face.LBPHFaceRecognizer_create()
+# try:
+#     recognizer = cv2.face.LBPHFaceRecognizer_create()
+# except Exception as e:
+#     print(traceback.format_exc())
+
 recognizer.read("trainner.yml")
 labels = {"person_name": 1}
 with open("labels.pickle", 'rb') as f:
@@ -15,7 +25,8 @@ with open("labels.pickle", 'rb') as f:
     labels = {v:k for k,v in og_labels.items()}
     
 cap = cv2.VideoCapture('http://192.168.1.11:8080/video')
-
+print(cv2.__version__)
+print(cv2.__file__)
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
@@ -32,10 +43,13 @@ while(True):
             # print(labels[id_])
             font = cv2.FONT_HERSHEY_SIMPLEX
             name = labels[id_]
+            base_url = "http://localhost:5000"
+            url = f"{base_url}/name"
+            params = {"name": name}
+            response = requests.post(url, params=params)
             color = (255, 255, 255)
             stroke = 2
             cv2.putText(frame, name, (x, y), font, 1, color, stroke, cv2.LINE_AA)
-        
         img_item = "7.png"
         cv2.imwrite(img_item, roi_color)
         color = (255, 0, 0) #BGR 0-255 
@@ -46,7 +60,6 @@ while(True):
         subitems = smile_cascade.detectMultiScale(roi_gray)
         for(ex,ey,ew,eh) in subitems:
             cv2.rectangle(roi_color,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
-
     cv2.imshow('frame',frame)
     if cv2.waitKey(20) & 0xFF == ord('q'):
         break
